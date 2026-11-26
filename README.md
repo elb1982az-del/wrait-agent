@@ -1,5 +1,5 @@
 # Wraith
-
+WARNING: This tool is strictly for authorized security testing. You must only use it within the scope of systems you own or have explicit, written permission to test. Unauthorized use is illegal and strictly prohibited.
 **Wraith** is a standalone autonomous penetration-testing agent shipped as a native Android APK.
 It is built for **rooted Kali NetHunter devices** and embeds **Python 3.11** through Chaquopy,
 so it runs **without Termux** and without installing any toolchain on the phone.
