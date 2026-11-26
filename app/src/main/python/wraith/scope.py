@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import ipaddress
 import os
+import re
 from typing import Iterable, List, Tuple
 
 
@@ -21,27 +22,59 @@ def default_scope_text() -> str:
         return "allowed:\n  - 192.168.0.0/24\n"
 
 
+def _looks_like_network(token: str) -> bool:
+    """Cheap pre-filter so prose in a scope field is not reported as an IP."""
+    return any(ch.isdigit() for ch in token) and any(ch in token for ch in ".:/")
+
+
+def _tokenize(value: str) -> List[str]:
+    """Split an inline value on commas, semicolons, or whitespace."""
+    cleaned = value.strip().strip("[]")
+    return [item.strip("\"'[],;") for item in re.split(r"[\s,;]+", cleaned) if item.strip()]
+
+
 def parse_scope(text: str) -> Tuple[List[ipaddress._BaseNetwork], List[str]]:
-    """Parse a scope file into networks plus validation errors."""
+    """Parse YAML lists, inline lists, or plain IPs/CIDRs into networks."""
     networks: List[ipaddress._BaseNetwork] = []
     errors: List[str] = []
-    in_allowed = False
+    section: str | None = None
 
-    for raw in text.splitlines():
-        line = raw.split("#", 1)[0].rstrip()
-        if not line.strip():
-            continue
-        stripped = line.strip()
-        if not line.startswith((" ", "\t")):
-            in_allowed = stripped == "allowed:"
-            continue
-        if not in_allowed or not stripped.startswith("-"):
-            continue
-        value = stripped[1:].strip().strip('"').strip("'")
+    def add(value: str) -> None:
+        value = value.strip().strip("\"'[]")
+        if not value:
+            return
         try:
             networks.append(ipaddress.ip_network(value, strict=False))
         except ValueError as exc:
             errors.append(f"invalid scope entry {value!r}: {exc}")
+
+    for raw in text.splitlines():
+        line = raw.split("#", 1)[0].rstrip()
+        stripped = line.strip()
+        if not stripped:
+            continue
+
+        header = re.match(r"^([A-Za-z_][\w-]*)\s*:\s*(.*)$", stripped)
+        if header and not line.startswith((" ", "\t")):
+            section = header.group(1).lower()
+            if section == "allowed":
+                inline = header.group(2).strip()
+                if inline:
+                    for token in _tokenize(inline):
+                        add(token)
+            continue
+
+        if stripped.startswith("-"):
+            if section in (None, "allowed"):
+                for token in _tokenize(stripped[1:]):
+                    add(token)
+            continue
+
+        # Plain scope fields: one or more IPs/CIDRs on a line.
+        for token in _tokenize(stripped):
+            if _looks_like_network(token):
+                add(token)
+
     return networks, errors
 
 

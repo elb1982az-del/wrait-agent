@@ -12,6 +12,7 @@ import android.os.Looper;
 import android.text.InputType;
 import android.text.SpannableString;
 import android.text.style.ForegroundColorSpan;
+import android.view.Gravity;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
@@ -32,6 +33,8 @@ public class MainActivity extends Activity {
     private static final int BG = 0xFF080D12;
     private static final int FG = 0xFFE6F1F5;
     private static final int ACCENT = 0xFF21E6A1;
+    private static final int WARN_BG = 0xFFC62828;
+    private static final int WARN_FG = 0xFFFFFFFF;
 
     private EditText objective;
     private EditText scope;
@@ -65,6 +68,18 @@ public class MainActivity extends Activity {
         root.setBackgroundColor(BG);
         int pad = dp(20);
         root.setPadding(pad, dp(32), pad, pad);
+
+        TextView warning = label(
+                "WARNING: For authorized testing only. Use strictly within your allowed scope.",
+                12, WARN_FG);
+        warning.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
+        warning.setBackgroundColor(WARN_BG);
+        warning.setGravity(Gravity.CENTER);
+        warning.setPadding(dp(12), dp(10), dp(12), dp(10));
+        LinearLayout.LayoutParams warningParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        warningParams.setMargins(0, 0, 0, dp(12));
+        root.addView(warning, warningParams);
 
         TextView title = label("WRAITH", 26, ACCENT);
         title.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);

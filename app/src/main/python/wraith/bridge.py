@@ -28,6 +28,7 @@ def configure(base_dir: str, scope_path: str, log_path: str) -> str:
     """Set paths and prepare the audit database. Returns a status string."""
     os.makedirs(base_dir, exist_ok=True)
     os.environ["HOME"] = base_dir
+    os.environ["OPENCODE_RELAY_DIR"] = base_dir
     _state["base"] = base_dir
     _state["scope_path"] = scope_path
     _state["log_path"] = log_path

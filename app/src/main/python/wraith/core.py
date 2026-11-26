@@ -73,7 +73,7 @@ class Agent:
         self.log = log
         self.stop_event = stop_event or threading.Event()
         self.max_steps = max_steps
-        self.client = client or OpenCodeClient()
+        self.client = client or OpenCodeClient(relay_dir=base_dir)
         self.history_lines: List[str] = []
 
     def emit(self, level: str, message: str, silent: bool = False, **detail) -> None:
@@ -209,6 +209,10 @@ class Agent:
             self.emit("warn", "step {}:{}".format(step, note), command=command, allowed=True, target=target)
         self.emit("run", "step {}: {}".format(step, command), command=command, allowed=True, target=target)
         output = self._run(runtime_argv, line_callback=self._stream_line)
+        if output.startswith("bridge rejected:") or output.startswith("error:"):
+            self.emit("error", "step {} failed: {}".format(step, output),
+                      command=command, allowed=False, target=target)
+            return None
         self.emit("success", "step {} completed".format(step), command=command, allowed=True, target=target)
         self.emit("output", output[:4000], silent=True, command=command,
                   output=output, allowed=True, target=target)
@@ -262,16 +266,18 @@ class Agent:
 
         collected: List[str] = []
         seen = set()
-        deadline = time.time() + 300
+        deadline = time.time() + 900
         while time.time() < deadline:
             if self.stop_event.is_set():
                 return "error: stopped"
             try:
                 with open(stream_path, "r", encoding="utf-8") as handle:
-                    for index, line in enumerate(handle):
-                        if index in seen:
+                    for line in handle:
+                        # Track raw records, not line numbers: the bridge truncates
+                        # and rewrites this file for every request.
+                        if line in seen:
                             continue
-                        seen.add(index)
+                        seen.add(line)
                         try:
                             item = json.loads(line)
                         except Exception:
