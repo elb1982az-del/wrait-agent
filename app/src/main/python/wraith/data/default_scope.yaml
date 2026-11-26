@@ -1,0 +1,3 @@
+# Wraith scope. Only IPs and CIDRs listed here may be targeted.
+allowed:
+  - 192.168.0.0/24

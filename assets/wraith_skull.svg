@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <!-- hood silhouette: distinct Wraith framing -->
+    <path d="M512 92 C300 92 214 262 214 486 L214 920 L810 920 L810 486 C810 262 724 92 512 92 Z"
+          stroke="#137A3E" stroke-width="20" opacity="0.85"/>
+
+    <!-- skull -->
+    <path d="M512 150 C342 150 258 286 258 456 C258 566 306 640 356 690 L356 802 C356 856 410 894 512 894 C614 894 668 856 668 802 L668 690 C718 640 766 566 766 456 C766 286 682 150 512 150 Z"
+          fill="#0A3A20" stroke="#39FF88" stroke-width="16"/>
+
+    <!-- Wraith W circuit on forehead -->
+    <path d="M404 316 L452 382 L512 330 L572 382 L620 316"
+          stroke="#9BFFC4" stroke-width="14"/>
+
+    <!-- eye sockets -->
+    <ellipse cx="420" cy="486" rx="72" ry="56" fill="#001C25" stroke="#39FF88" stroke-width="12"/>
+    <ellipse cx="604" cy="486" rx="72" ry="56" fill="#001C25" stroke="#39FF88" stroke-width="12"/>
+
+    <!-- nose cavity -->
+    <path d="M512 560 L478 640 L546 640 Z" fill="#001C25" stroke="#39FF88" stroke-width="10"/>
+
+    <!-- jaw / teeth -->
+    <path d="M372 744 L652 744" stroke="#39FF88" stroke-width="12"/>
+    <path d="M430 748 L430 838 M474 748 L474 846 M518 748 L518 848 M562 748 L562 846 M606 748 L606 838"
+          stroke="#39FF88" stroke-width="10"/>
+
+    <!-- cheek scan accents -->
+    <path d="M300 620 L360 660 M724 620 L664 660" stroke="#1E9F55" stroke-width="10"/>
+  </g>
+</svg>

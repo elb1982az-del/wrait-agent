@@ -1,0 +1,15 @@
+*.apk
+*.aab
+.gradle/
+build/
+app/build/
+app/release/
+local.properties
+.idea/
+*.iml
+.DS_Store
+__pycache__/
+*.py[cod]
+*.db
+*.log
+*.pid

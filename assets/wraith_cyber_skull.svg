@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <g fill="none" stroke-linejoin="round" stroke-linecap="round">
+    <!-- skull -->
+    <path d="M512 150 C342 150 258 286 258 456 C258 566 306 640 356 690 L356 802 C356 856 410 894 512 894 C614 894 668 856 668 802 L668 690 C718 640 766 566 766 456 C766 286 682 150 512 150 Z"
+          fill="#0A7A3A" stroke="#39FF88" stroke-width="18"/>
+
+    <!-- angular hacker eye sockets -->
+    <path d="M360 476 L470 440 L455 524 L378 532 Z" fill="#04100A" stroke="#39FF88" stroke-width="12"/>
+    <path d="M664 476 L554 440 L569 524 L646 532 Z" fill="#04100A" stroke="#39FF88" stroke-width="12"/>
+
+    <!-- nose cavity -->
+    <path d="M512 566 L478 646 L546 646 Z" fill="#04100A" stroke="#39FF88" stroke-width="10"/>
+
+    <!-- jaw / teeth -->
+    <path d="M372 748 L652 748" stroke="#39FF88" stroke-width="14"/>
+    <path d="M430 752 L430 840 M474 752 L474 848 M518 752 L518 850 M562 752 L562 848 M606 752 L606 840"
+          stroke="#39FF88" stroke-width="12"/>
+
+    <!-- subtle cyber scan lines -->
+    <path d="M300 330 L724 330 M286 690 L738 690" stroke="#1E9F55" stroke-width="6" opacity="0.55"/>
+    <path d="M270 430 L320 430 M754 430 L704 430 M280 590 L330 590 M744 590 L694 590"
+          stroke="#39FF88" stroke-width="8" opacity="0.7"/>
+  </g>
+</svg>
