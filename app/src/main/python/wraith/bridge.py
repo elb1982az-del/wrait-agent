@@ -6,6 +6,7 @@ which returns immediately while a Python worker thread does the work.
 
 from __future__ import annotations
 
+import json
 import os
 import threading
 from typing import Dict
@@ -92,6 +93,14 @@ def stop() -> str:
     event = _state.get("stop")
     if event is not None:
         event.set()
+    try:
+        base = str(_state.get("base") or "")
+        if base:
+            path = os.path.join(base, "bridge_stop.json")
+            with open(path, "w", encoding="utf-8") as handle:
+                json.dump({"stop": True}, handle)
+    except OSError:
+        pass
     _append("[info] stop signal sent")
     return "stopping"
 

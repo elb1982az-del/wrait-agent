@@ -103,6 +103,35 @@ class ValidatorTests(unittest.TestCase):
             self.assertFalse(ok, command)
             self.assertIn("blocked pattern", reason)
 
+    def test_responder_ng_allowed(self):
+        for command in (
+            "responder-ng -I wlan0 -i 192.168.1.10 -A -v",
+            "responder-ng -I wlan0 -e 192.168.1.10 -v",
+            "responder-ng --interface=wlan0 --ip=192.168.1.10 -A",
+            "responder-ng -I wlan1 -i 192.168.1.10 -A -v",
+            "responder-ng -I wlan2 -i 192.168.1.10 -A -v",
+            "responder-ng -I usb0 -i 192.168.1.10 -A -v",
+        ):
+            ok, reason, argv, targets = self.check(command)
+            self.assertTrue(ok, reason)
+            self.assertEqual(argv[0], "responder-ng")
+            self.assertEqual(targets, ["192.168.1.10"])
+
+    def test_responder_ng_scope_and_flags(self):
+        for command, fragment in (
+            ("responder-ng -I wlan0 -i 8.8.8.8 -A", "outside scope"),
+            ("responder-ng -I wlan0 -A -v", "requires an in-scope"),
+            ("responder-ng -I ALL -i 192.168.1.10 -A", "interface ALL"),
+            ("responder-ng -I wlan0 -i 192.168.1.10 -d", "unsafe flag"),
+            ("responder-ng -I wlan0 -i 192.168.1.10 --dhcpv6", "unsafe flag"),
+            ("responder-ng -I wlan0 -i 192.168.1.10 --disable-ess", "unsafe flag"),
+            ("responder-ng -I wlan0 -i http://192.168.1.10", "literal IPv4"),
+            ("responder-ng -I bogus0 -i 192.168.1.10 -A", "interface not allowed"),
+        ):
+            ok, reason, _, _ = self.check(command)
+            self.assertFalse(ok, command)
+            self.assertIn(fragment, reason)
+
     def test_shell_operators(self):
         ok, reason, _, _ = self.check("nmap 192.168.1.1; id")
         self.assertFalse(ok)
@@ -131,6 +160,8 @@ class HelperTests(unittest.TestCase):
         self.assertIn("sqlmap", names)
         names = [item["name"] for item in tools.prune("open a tunnel", "", 2)]
         self.assertIn("chisel", names)
+        names = [item["name"] for item in tools.prune("llmnr test", "", 2)]
+        self.assertIn("responder-ng", names)
 
     def test_history_compress(self):
         compressed = history.compress(["a", "b", "c", "d", "e", "f"], keep=2)
@@ -138,9 +169,10 @@ class HelperTests(unittest.TestCase):
         self.assertIn("RECENT STEPS", compressed)
 
     def test_extract_commands(self):
-        reply = "1. nmap -sV 192.168.1.1\n2. `nikto -h 192.168.1.1`\n3. sqlmap -u http://192.168.1.1/\nSome prose"
-        self.assertEqual(extract_commands(reply), [
+        reply = "1. nmap -sV 192.168.1.1\n2. `nikto -h 192.168.1.1`\n3. sqlmap -u http://192.168.1.1/\n4. responder-ng -I wlan0 -i 192.168.1.1 -A -v\nSome prose"
+        self.assertEqual(extract_commands(reply, limit=10), [
             "nmap -sV 192.168.1.1", "nikto -h 192.168.1.1", "sqlmap -u http://192.168.1.1/",
+            "responder-ng -I wlan0 -i 192.168.1.1 -A -v",
         ])
 
 

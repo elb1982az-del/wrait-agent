@@ -46,6 +46,9 @@ REQUEST = os.path.join(APP_FILES, "bridge_request.json")
 STREAM = os.path.join(APP_FILES, "bridge_stream.txt")
 MODEL_REQUEST = os.path.join(APP_FILES, "model_request.json")
 MODEL_RESPONSE = os.path.join(APP_FILES, "model_response.json")
+STOP_REQUEST = os.path.join(APP_FILES, "bridge_stop.json")
+ACTIVE: dict = {}
+ACTIVE_LOCK = threading.Lock()
 OPENCODE_URL = "http://127.0.0.1:49374"
 OPENCODE_AUTH = "/root/.config/opencode/service.json"
 
@@ -93,11 +96,17 @@ def run_stream(argv, rid):
                 [executable] + clean_argv[1:], stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT, env=env, cwd="/root",
             )
+            with ACTIVE_LOCK:
+                ACTIVE[rid] = process
             assert process.stdout is not None
-            for raw in process.stdout:
-                emit(out, rid, {"ok": True,
-                                "line": raw.decode("utf-8", errors="replace").rstrip("\r\n")})
-            emit(out, rid, {"ok": True, "done": True, "exit": process.wait()})
+            try:
+                for raw in process.stdout:
+                    emit(out, rid, {"ok": True,
+                                    "line": raw.decode("utf-8", errors="replace").rstrip("\r\n")})
+                emit(out, rid, {"ok": True, "done": True, "exit": process.wait()})
+            finally:
+                with ACTIVE_LOCK:
+                    ACTIVE.pop(rid, None)
     except Exception as exc:
         try:
             with open(STREAM, "a") as out:
@@ -162,10 +171,29 @@ def run_model(request, rid):
             pass
 
 
+def consume_stop_request():
+    try:
+        with open(STOP_REQUEST, "r", encoding="utf-8") as handle:
+            if not json.load(handle).get("stop"):
+                return
+        with ACTIVE_LOCK:
+            processes = list(ACTIVE.values())
+        for process in processes:
+            if process.poll() is None:
+                process.terminate()
+        try:
+            os.unlink(STOP_REQUEST)
+        except OSError:
+            pass
+    except Exception:
+        pass
+
+
 def watch_requests():
     last_id = None
     last_model_id = None
     while True:
+        consume_stop_request()
         try:
             with open(REQUEST, "r", encoding="utf-8") as handle:
                 request = json.load(handle)

@@ -21,10 +21,11 @@ TOOL_PATHS = (
     "/system/bin", "/system/xbin",
 )
 NH_TOOL_ROOT = "/data/local/nhsystem/kali-arm64/usr/bin"
+BRIDGE_ONLY_TOOLS = {"responder-ng"}
 
 PLAN_PROMPT = """Wraith authorized-planning mode. Target IP: {target}. Scope: {scope}.
 Tools available: {schemas}
-Return a short numbered list of 1-4 commands using ONLY nmap, nikto, hydra, chisel or sqlmap.
+Return a short numbered list of 1-4 commands using ONLY nmap, nikto, hydra, chisel, sqlmap or responder-ng.
 Use the literal target IP. No pipes, redirects, shell operators, wildcards or filenames.
 No prose, no markdown fences. One command per line."""
 
@@ -32,10 +33,11 @@ NEXT_PROMPT = """Wraith authorized-planning mode. Objective: {objective}
 Target IP: {target}. Scope: {scope}. Tools: {schemas}
 Previous steps:
 {history}
-Reply with EXACTLY ONE command from (nmap, nikto, hydra, chisel, sqlmap) using the literal target IP.
+Reply with EXACTLY ONE command from (nmap, nikto, hydra, chisel, sqlmap, responder-ng) using the literal target IP.
+For responder-ng use -I <interface> -i <literal target IP> -A -v and no other flags.
 No prose, no fences, no pipes/redirects/shell operators. If the objective is done, reply DONE."""
 
-COMMAND_RE = re.compile(r"^(nmap|nikto|hydra|chisel|sqlmap)\s+.+$", re.MULTILINE)
+COMMAND_RE = re.compile(r"^(nmap|nikto|hydra|chisel|sqlmap|responder-ng)\s+.+$", re.MULTILINE)
 
 
 def extract_commands(text: str, limit: int = 4) -> List[str]:
@@ -45,7 +47,7 @@ def extract_commands(text: str, limit: int = 4) -> List[str]:
         line = raw.strip().lstrip("-").strip()
         line = line.split(".", 1)[-1].strip() if re.match(r"^\d+[\.\)]", line) else line
         line = line.strip("` ").strip()
-        if re.match(r"^(nmap|nikto|hydra|chisel|sqlmap)\s+", line):
+        if re.match(r"^(nmap|nikto|hydra|chisel|sqlmap|responder-ng)\s+", line):
             found.append(line)
         if len(found) >= limit:
             break
@@ -228,7 +230,10 @@ class Agent:
         if executable.startswith(NH_TOOL_ROOT):
             if os.path.exists(executable):
                 return " using Kali chroot tool {}".format(executable)
-            return " {} missing in Kali chroot".format(os.path.basename(executable))
+            tool = os.path.basename(executable)
+            if tool in BRIDGE_ONLY_TOOLS:
+                return " using root bridge tool {}".format(tool)
+            return " {} missing in Kali chroot".format(tool)
         tool = os.path.basename(executable)
         path = ":".join(TOOL_PATHS) + ":" + os.environ.get("PATH", "")
         if shutil.which(tool, path=path) is None:
@@ -269,6 +274,11 @@ class Agent:
         deadline = time.time() + 900
         while time.time() < deadline:
             if self.stop_event.is_set():
+                try:
+                    with open(os.path.join(self.base_dir, "bridge_stop.json"), "w", encoding="utf-8") as handle:
+                        handle.write('{"stop":true}')
+                except OSError:
+                    pass
                 return "error: stopped"
             try:
                 with open(stream_path, "r", encoding="utf-8") as handle:

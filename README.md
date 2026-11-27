@@ -22,7 +22,7 @@ flowchart TD
     EXEC[Python subprocess bridge<br/>NetHunter native tools]
     CVE[Offline CVE matcher]
     DB[(SQLite audit log)]
-    TOOLS[nmap · nikto · hydra · chisel · sqlmap<br/>from NetHunter, NOT bundled]
+    TOOLS[nmap · nikto · hydra · chisel · sqlmap · responder-ng<br/>from NetHunter, NOT bundled]
 
     UI -->|start / stop| SVC
     SVC --> BRIDGE --> CORE
@@ -56,7 +56,8 @@ Execution loop:
 | Control | Where | Behaviour |
 | --- | --- | --- |
 | Scope validation | `wraith/scope.py`, `validator.py` | Only literal IPs inside configured CIDRs pass. External targets are rejected. |
-| Command allowlist | `wraith/validator.py` | Only `nmap`, `nikto`, `hydra`, `chisel`, `sqlmap`. |
+| Command allowlist | `wraith/validator.py` | Only `nmap`, `nikto`, `hydra`, `chisel`, `sqlmap`, `responder-ng`. |
+| Responder-NG guardrails | `wraith/validator.py` | Requires an in-scope `-i`/`-e` IPv4 and an allowed interface (`wlan0`–`wlan3`, `eth0`, `eth1`, `usb0`, `usb1`); blocks `-I ALL`, DHCP/DHCPv6/RDNSS/DNSSL, IPv6, proxy and auth-downgrade flags. |
 | Destructive filter | `wraith/validator.py` | Blocks `rm -rf`, `mkfs`, `dd`, `sudo`, `su`, pipes, redirects, command substitution, shells. |
 | No shell injection | `wraith/core.py` | `subprocess.run(argv, shell=False)`. |
 | Dry-run | UI toggle, default ON | Commands are shown but never executed. |
@@ -93,8 +94,10 @@ PYTHONPATH=app/src/main/python python3.11 -m unittest discover -s tests -v
 - Internal files: `scope.yaml`, `wraith.log`, `wraith_audit.db`
 - LLM endpoint: `http://127.0.0.1:49374` (OpenCode server already running on the device)
 - Default free model: `opencode/big-pickle`
-- Tools are **not** bundled — Wraith calls NetHunter's own `nmap`, `nikto`, `hydra`, `chisel`, `sqlmap`
-  binaries through the subprocess bridge.
+- Tools are **not** bundled — Wraith calls NetHunter's own `nmap`, `nikto`, `hydra`, `chisel`, `sqlmap`,
+  `responder-ng` binaries through the subprocess bridge.
+- Responder-NG is installed side-by-side from `Tantalum-Labs/Responder-NG` as `/usr/bin/responder-ng`;
+  the distro `responder` command is left untouched.
 
 ## Legal
 

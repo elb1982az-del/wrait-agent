@@ -30,6 +30,11 @@ SCHEMAS = {
         "purpose": "test a web application for SQL injection",
         "example": "sqlmap -u http://<ip> --batch --level=1",
     },
+    "responder-ng": {
+        "name": "responder-ng",
+        "purpose": "passively observe or safely test LLMNR/NBT-NS/mDNS on an in-scope interface",
+        "example": "responder-ng -I wlan1 -i <ip> -A -v",
+    },
 }
 
 
@@ -47,6 +52,8 @@ def prune(objective: str, last_output: str = "", step: int = 0) -> List[dict]:
         selected.append("sqlmap")
     if any(token in lowered_objective for token in ("tunnel", "proxy", "pivot", "forward", "chisel")):
         selected.append("chisel")
+    if any(token in lowered_objective for token in ("responder", "llmnr", "nbt-ns", "nbtns", "mdns", "name resolution")):
+        selected.append("responder-ng")
     if not selected:
         selected = ["nmap"]
     return [SCHEMAS[name] for name in dict.fromkeys(selected)]
