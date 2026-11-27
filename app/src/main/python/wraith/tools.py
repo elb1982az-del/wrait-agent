@@ -20,6 +20,16 @@ SCHEMAS = {
         "purpose": "test login strength with a local wordlist",
         "example": "hydra -l admin -P /usr/share/wordlists/passwords.txt <ip> http",
     },
+    "chisel": {
+        "name": "chisel",
+        "purpose": "create an authorized TCP tunnel or forward",
+        "example": "chisel client <ip>:8080 R:1080:socks",
+    },
+    "sqlmap": {
+        "name": "sqlmap",
+        "purpose": "test a web application for SQL injection",
+        "example": "sqlmap -u http://<ip> --batch --level=1",
+    },
 }
 
 
@@ -33,6 +43,10 @@ def prune(objective: str, last_output: str = "", step: int = 0) -> List[dict]:
         selected.append("nikto")
     if any(token in lowered_objective for token in ("login", "password", "credential", "brute")):
         selected.append("hydra")
+    if any(token in lowered_objective for token in ("sql", "sqli", "injection", "database")):
+        selected.append("sqlmap")
+    if any(token in lowered_objective for token in ("tunnel", "proxy", "pivot", "forward", "chisel")):
+        selected.append("chisel")
     if not selected:
         selected = ["nmap"]
     return [SCHEMAS[name] for name in dict.fromkeys(selected)]

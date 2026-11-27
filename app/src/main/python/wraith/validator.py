@@ -14,10 +14,12 @@ from typing import Iterable, List, Tuple
 
 from .scope import is_allowed
 
-ALLOWED_TOOLS = {"nmap", "nikto", "hydra"}
+ALLOWED_TOOLS = {"nmap", "nikto", "hydra", "chisel", "sqlmap"}
 BLOCK_FRAGMENTS = (
     "rm -rf", "mkfs", "dd ", "sudo ", "su ", "chmod ", "chown ",
     "shutdown", "reboot", "curl ", "wget ", "python", "bash ", "sh ",
+    "--os-shell", "--os-cmd", "--sql-shell", "--file-write", "--file-read",
+    "--dump-all",
     ";", "|", "&", "`", "$(", "&&", "||", ">", "<", "\n", "../",
 )
 SAFE_PATH_PREFIXES = ("/usr/share/", "/usr/bin/", "/system/bin/", "/sdcard/Download/wraith/")
@@ -25,15 +27,26 @@ IP_RE = re.compile(r"^\d{1,3}(?:\.\d{1,3}){3}$")
 
 
 def _extract_targets(argv: List[str]) -> List[str]:
+    """Pull literal IPv4 targets from IPs, host:port pairs and URLs."""
     targets: List[str] = []
     for token in argv:
         candidate = token.split("=", 1)[-1]
-        if IP_RE.match(candidate):
-            try:
-                ipaddress.ip_address(candidate)
-            except ValueError:
-                continue
-            targets.append(candidate)
+        if "://" in candidate:
+            candidate = candidate.split("://", 1)[1]
+        if "@" in candidate:
+            candidate = candidate.rsplit("@", 1)[1]
+        candidate = candidate.split("/", 1)[0].split("?", 1)[0].split("#", 1)[0]
+        if ":" in candidate:
+            host, _, port = candidate.rpartition(":")
+            if port.isdigit():
+                candidate = host
+        if not IP_RE.match(candidate):
+            continue
+        try:
+            ipaddress.ip_address(candidate)
+        except ValueError:
+            continue
+        targets.append(candidate)
     return targets
 
 
@@ -62,7 +75,7 @@ def validate(command: str, networks: Iterable[ipaddress._BaseNetwork]) -> Tuple[
         return False, f"tool not allowlisted: {tool}", [], []
 
     for token in argv[1:]:
-        if "/" in token and not token.startswith("-"):
+        if "/" in token and not token.startswith("-") and "://" not in token:
             if not any(token.startswith(prefix) for prefix in SAFE_PATH_PREFIXES):
                 return False, f"unsafe path: {token}", [], []
 

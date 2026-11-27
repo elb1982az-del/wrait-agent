@@ -79,9 +79,29 @@ class ValidatorTests(unittest.TestCase):
             self.assertIn("blocked pattern", reason)
 
     def test_tool_not_allowlisted(self):
-        ok, reason, _, _ = self.check("sqlmap -u 192.168.1.1")
+        ok, reason, _, _ = self.check("masscan -p1-65535 192.168.1.1")
         self.assertFalse(ok)
         self.assertIn("tool not allowlisted", reason)
+
+    def test_new_tools_allowed(self):
+        commands = (
+            "sqlmap -u http://192.168.1.10/ --batch --level=1",
+            "chisel client 192.168.1.10:8080 R:1080:socks",
+        )
+        for command in commands:
+            ok, reason, argv, targets = self.check(command)
+            self.assertTrue(ok, reason)
+            self.assertIn(argv[0], validator.ALLOWED_TOOLS)
+            self.assertEqual(targets, ["192.168.1.10"])
+
+    def test_sqlmap_dangerous_flags_blocked(self):
+        for command in (
+            "sqlmap -u http://192.168.1.10/ --os-shell",
+            "sqlmap -u http://192.168.1.10/ --file-write=x y",
+        ):
+            ok, reason, _, _ = self.check(command)
+            self.assertFalse(ok, command)
+            self.assertIn("blocked pattern", reason)
 
     def test_shell_operators(self):
         ok, reason, _, _ = self.check("nmap 192.168.1.1; id")
@@ -107,6 +127,10 @@ class HelperTests(unittest.TestCase):
         names = [item["name"] for item in tools.prune("test login", "80/tcp open", 2)]
         self.assertIn("nikto", names)
         self.assertIn("hydra", names)
+        names = [item["name"] for item in tools.prune("test sqli", ":8080 open", 2)]
+        self.assertIn("sqlmap", names)
+        names = [item["name"] for item in tools.prune("open a tunnel", "", 2)]
+        self.assertIn("chisel", names)
 
     def test_history_compress(self):
         compressed = history.compress(["a", "b", "c", "d", "e", "f"], keep=2)
@@ -114,8 +138,10 @@ class HelperTests(unittest.TestCase):
         self.assertIn("RECENT STEPS", compressed)
 
     def test_extract_commands(self):
-        reply = "1. nmap -sV 192.168.1.1\n2. `nikto -h 192.168.1.1`\nSome prose"
-        self.assertEqual(extract_commands(reply), ["nmap -sV 192.168.1.1", "nikto -h 192.168.1.1"])
+        reply = "1. nmap -sV 192.168.1.1\n2. `nikto -h 192.168.1.1`\n3. sqlmap -u http://192.168.1.1/\nSome prose"
+        self.assertEqual(extract_commands(reply), [
+            "nmap -sV 192.168.1.1", "nikto -h 192.168.1.1", "sqlmap -u http://192.168.1.1/",
+        ])
 
 
 class AuditTests(unittest.TestCase):

@@ -24,7 +24,7 @@ NH_TOOL_ROOT = "/data/local/nhsystem/kali-arm64/usr/bin"
 
 PLAN_PROMPT = """Wraith authorized-planning mode. Target IP: {target}. Scope: {scope}.
 Tools available: {schemas}
-Return a short numbered list of 1-4 commands using ONLY nmap, nikto or hydra.
+Return a short numbered list of 1-4 commands using ONLY nmap, nikto, hydra, chisel or sqlmap.
 Use the literal target IP. No pipes, redirects, shell operators, wildcards or filenames.
 No prose, no markdown fences. One command per line."""
 
@@ -32,10 +32,10 @@ NEXT_PROMPT = """Wraith authorized-planning mode. Objective: {objective}
 Target IP: {target}. Scope: {scope}. Tools: {schemas}
 Previous steps:
 {history}
-Reply with EXACTLY ONE command from (nmap, nikto, hydra) using the literal target IP.
+Reply with EXACTLY ONE command from (nmap, nikto, hydra, chisel, sqlmap) using the literal target IP.
 No prose, no fences, no pipes/redirects/shell operators. If the objective is done, reply DONE."""
 
-COMMAND_RE = re.compile(r"^(nmap|nikto|hydra)\s+.+$", re.MULTILINE)
+COMMAND_RE = re.compile(r"^(nmap|nikto|hydra|chisel|sqlmap)\s+.+$", re.MULTILINE)
 
 
 def extract_commands(text: str, limit: int = 4) -> List[str]:
@@ -45,7 +45,7 @@ def extract_commands(text: str, limit: int = 4) -> List[str]:
         line = raw.strip().lstrip("-").strip()
         line = line.split(".", 1)[-1].strip() if re.match(r"^\d+[\.\)]", line) else line
         line = line.strip("` ").strip()
-        if re.match(r"^(nmap|nikto|hydra)\s+", line):
+        if re.match(r"^(nmap|nikto|hydra|chisel|sqlmap)\s+", line):
             found.append(line)
         if len(found) >= limit:
             break

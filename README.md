@@ -22,7 +22,7 @@ flowchart TD
     EXEC[Python subprocess bridge<br/>NetHunter native tools]
     CVE[Offline CVE matcher]
     DB[(SQLite audit log)]
-    TOOLS[nmap · nikto · hydra<br/>from NetHunter, NOT bundled]
+    TOOLS[nmap · nikto · hydra · chisel · sqlmap<br/>from NetHunter, NOT bundled]
 
     UI -->|start / stop| SVC
     SVC --> BRIDGE --> CORE
@@ -56,7 +56,7 @@ Execution loop:
 | Control | Where | Behaviour |
 | --- | --- | --- |
 | Scope validation | `wraith/scope.py`, `validator.py` | Only literal IPs inside configured CIDRs pass. External targets are rejected. |
-| Command allowlist | `wraith/validator.py` | Only `nmap`, `nikto`, `hydra`. |
+| Command allowlist | `wraith/validator.py` | Only `nmap`, `nikto`, `hydra`, `chisel`, `sqlmap`. |
 | Destructive filter | `wraith/validator.py` | Blocks `rm -rf`, `mkfs`, `dd`, `sudo`, `su`, pipes, redirects, command substitution, shells. |
 | No shell injection | `wraith/core.py` | `subprocess.run(argv, shell=False)`. |
 | Dry-run | UI toggle, default ON | Commands are shown but never executed. |
@@ -93,8 +93,8 @@ PYTHONPATH=app/src/main/python python3.11 -m unittest discover -s tests -v
 - Internal files: `scope.yaml`, `wraith.log`, `wraith_audit.db`
 - LLM endpoint: `http://127.0.0.1:49374` (OpenCode server already running on the device)
 - Default free model: `opencode/big-pickle`
-- Tools are **not** bundled — Wraith calls NetHunter's own `nmap`, `nikto`, `hydra` binaries
-  through the subprocess bridge.
+- Tools are **not** bundled — Wraith calls NetHunter's own `nmap`, `nikto`, `hydra`, `chisel`, `sqlmap`
+  binaries through the subprocess bridge.
 
 ## Legal
 
