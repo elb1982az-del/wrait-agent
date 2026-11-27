@@ -172,7 +172,9 @@ def watch_requests():
             rid = request.get("id")
             if rid and rid != last_id:
                 last_id = rid
-                run_stream(request.get("argv", []), rid)
+                threading.Thread(target=run_stream,
+                                 args=(request.get("argv", []), rid),
+                                 daemon=True).start()
         except Exception:
             pass
         try:
@@ -181,7 +183,7 @@ def watch_requests():
             rid = request.get("id")
             if rid and rid != last_model_id:
                 last_model_id = rid
-                run_model(request, rid)
+                threading.Thread(target=run_model, args=(request, rid), daemon=True).start()
         except Exception:
             pass
         time.sleep(0.1)
