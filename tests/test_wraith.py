@@ -103,6 +103,30 @@ class ValidatorTests(unittest.TestCase):
             self.assertFalse(ok, command)
             self.assertIn("blocked pattern", reason)
 
+    def test_new_web_tools_allowed(self):
+        commands = (
+            "subfinder -d 192.168.1.10",
+            "httpx -u http://192.168.1.10",
+            "nuclei -u http://192.168.1.10",
+            "ffuf -u http://192.168.1.10/FUZZ -w /usr/share/wordlists/rockyou.txt",
+        )
+        for command in commands:
+            ok, reason, argv, targets = self.check(command)
+            self.assertTrue(ok, reason)
+            self.assertEqual(argv[0], command.split()[0])
+            self.assertEqual(targets, ["192.168.1.10"])
+
+    def test_new_web_tools_out_of_scope(self):
+        for command in (
+            "subfinder -d 8.8.8.8",
+            "httpx -u http://8.8.8.8",
+            "nuclei -u http://8.8.8.8",
+            "ffuf -u http://8.8.8.8/FUZZ -w /usr/share/wordlists/rockyou.txt",
+        ):
+            ok, reason, _, _ = self.check(command)
+            self.assertFalse(ok, command)
+            self.assertIn("outside scope", reason)
+
     def test_responder_ng_allowed(self):
         for command in (
             "responder-ng -I wlan0 -i 192.168.1.10 -A -v",
@@ -162,6 +186,14 @@ class HelperTests(unittest.TestCase):
         self.assertIn("chisel", names)
         names = [item["name"] for item in tools.prune("llmnr test", "", 2)]
         self.assertIn("responder-ng", names)
+        names = [item["name"] for item in tools.prune("find subdomains", "", 2)]
+        self.assertIn("subfinder", names)
+        names = [item["name"] for item in tools.prune("probe live http", "", 2)]
+        self.assertIn("httpx", names)
+        names = [item["name"] for item in tools.prune("run nuclei templates", "", 2)]
+        self.assertIn("nuclei", names)
+        names = [item["name"] for item in tools.prune("ffuf directory fuzz", "", 2)]
+        self.assertIn("ffuf", names)
 
     def test_history_compress(self):
         compressed = history.compress(["a", "b", "c", "d", "e", "f"], keep=2)
@@ -169,11 +201,21 @@ class HelperTests(unittest.TestCase):
         self.assertIn("RECENT STEPS", compressed)
 
     def test_extract_commands(self):
-        reply = "1. nmap -sV 192.168.1.1\n2. `nikto -h 192.168.1.1`\n3. sqlmap -u http://192.168.1.1/\n4. responder-ng -I wlan0 -i 192.168.1.1 -A -v\nSome prose"
-        self.assertEqual(extract_commands(reply, limit=10), [
-            "nmap -sV 192.168.1.1", "nikto -h 192.168.1.1", "sqlmap -u http://192.168.1.1/",
-            "responder-ng -I wlan0 -i 192.168.1.1 -A -v",
+        reply = "\n".join([
+            "1. nmap -sV 192.168.1.1",
+            "2. `nikto -h 192.168.1.1`",
+            "3. sqlmap -u http://192.168.1.1/",
+            "4. responder-ng -I wlan0 -i 192.168.1.1 -A -v",
+            "5. subfinder -d 192.168.1.1",
+            "6. httpx -u http://192.168.1.1",
+            "7. nuclei -u http://192.168.1.1",
+            "8. ffuf -u http://192.168.1.1/FUZZ -w /usr/share/wordlists/rockyou.txt",
+            "Some prose",
         ])
+        self.assertEqual(len(extract_commands(reply, limit=10)), 8)
+        self.assertIn("subfinder -d 192.168.1.1", extract_commands(reply, limit=10))
+        self.assertIn("httpx -u http://192.168.1.1", extract_commands(reply, limit=10))
+        self.assertIn("nuclei -u http://192.168.1.1", extract_commands(reply, limit=10))
 
 
 class AuditTests(unittest.TestCase):

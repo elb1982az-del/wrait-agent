@@ -14,7 +14,10 @@ from typing import Iterable, List, Tuple
 
 from .scope import is_allowed
 
-ALLOWED_TOOLS = {"nmap", "nikto", "hydra", "chisel", "sqlmap", "responder-ng"}
+ALLOWED_TOOLS = {
+    "nmap", "nikto", "hydra", "chisel", "sqlmap", "responder-ng",
+    "subfinder", "httpx", "nuclei", "ffuf",
+}
 BLOCK_FRAGMENTS = (
     "rm -rf", "mkfs", "dd ", "sudo ", "su ", "chmod ", "chown ",
     "shutdown", "reboot", "curl ", "wget ", "python", "bash ", "sh ",
