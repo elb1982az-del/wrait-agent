@@ -127,6 +127,27 @@ class ValidatorTests(unittest.TestCase):
             self.assertFalse(ok, command)
             self.assertIn("outside scope", reason)
 
+    def test_crawl_and_tunnel_tools_allowed(self):
+        commands = (
+            "katana -u http://192.168.1.10",
+            "ligolo-ng agent -connect 192.168.1.10:11601",
+            "ligolo-ng proxy -laddr 192.168.1.10:11601",
+        )
+        for command in commands:
+            ok, reason, argv, targets = self.check(command)
+            self.assertTrue(ok, reason)
+            self.assertEqual(argv[0], "katana" if command.startswith("katana") else "ligolo-ng")
+            self.assertEqual(targets, ["192.168.1.10"])
+
+    def test_crawl_and_tunnel_tools_out_of_scope(self):
+        for command in (
+            "katana -u http://8.8.8.8",
+            "ligolo-ng agent -connect 8.8.8.8:11601",
+        ):
+            ok, reason, _, _ = self.check(command)
+            self.assertFalse(ok, command)
+            self.assertIn("outside scope", reason)
+
     def test_responder_ng_allowed(self):
         for command in (
             "responder-ng -I wlan0 -i 192.168.1.10 -A -v",
@@ -194,6 +215,10 @@ class HelperTests(unittest.TestCase):
         self.assertIn("nuclei", names)
         names = [item["name"] for item in tools.prune("ffuf directory fuzz", "", 2)]
         self.assertIn("ffuf", names)
+        names = [item["name"] for item in tools.prune("crawl the site", "", 2)]
+        self.assertIn("katana", names)
+        names = [item["name"] for item in tools.prune("ligolo tunnel", "", 2)]
+        self.assertIn("ligolo-ng", names)
 
     def test_history_compress(self):
         compressed = history.compress(["a", "b", "c", "d", "e", "f"], keep=2)
@@ -210,12 +235,16 @@ class HelperTests(unittest.TestCase):
             "6. httpx -u http://192.168.1.1",
             "7. nuclei -u http://192.168.1.1",
             "8. ffuf -u http://192.168.1.1/FUZZ -w /usr/share/wordlists/rockyou.txt",
+            "9. katana -u http://192.168.1.1",
+            "10. ligolo-ng agent -connect 192.168.1.1:11601",
             "Some prose",
         ])
-        self.assertEqual(len(extract_commands(reply, limit=10)), 8)
-        self.assertIn("subfinder -d 192.168.1.1", extract_commands(reply, limit=10))
-        self.assertIn("httpx -u http://192.168.1.1", extract_commands(reply, limit=10))
-        self.assertIn("nuclei -u http://192.168.1.1", extract_commands(reply, limit=10))
+        self.assertEqual(len(extract_commands(reply, limit=12)), 10)
+        self.assertIn("subfinder -d 192.168.1.1", extract_commands(reply, limit=12))
+        self.assertIn("httpx -u http://192.168.1.1", extract_commands(reply, limit=12))
+        self.assertIn("nuclei -u http://192.168.1.1", extract_commands(reply, limit=12))
+        self.assertIn("katana -u http://192.168.1.1", extract_commands(reply, limit=12))
+        self.assertIn("ligolo-ng agent -connect 192.168.1.1:11601", extract_commands(reply, limit=12))
 
 
 class AuditTests(unittest.TestCase):

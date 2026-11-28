@@ -16,7 +16,7 @@ from .scope import is_allowed
 
 ALLOWED_TOOLS = {
     "nmap", "nikto", "hydra", "chisel", "sqlmap", "responder-ng",
-    "subfinder", "httpx", "nuclei", "ffuf",
+    "subfinder", "httpx", "nuclei", "ffuf", "katana", "ligolo-ng",
 }
 BLOCK_FRAGMENTS = (
     "rm -rf", "mkfs", "dd ", "sudo ", "su ", "chmod ", "chown ",

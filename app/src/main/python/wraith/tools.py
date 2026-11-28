@@ -55,6 +55,16 @@ SCHEMAS = {
         "purpose": "fuzz paths on an in-scope web server with a local wordlist",
         "example": "ffuf -u http://<ip>/FUZZ -w /usr/share/wordlists/rockyou.txt",
     },
+    "katana": {
+        "name": "katana",
+        "purpose": "crawl an in-scope web application for URLs and endpoints",
+        "example": "katana -u http://<ip>",
+    },
+    "ligolo-ng": {
+        "name": "ligolo-ng",
+        "purpose": "create an authorized tunnel to an in-scope host",
+        "example": "ligolo-ng agent -connect <ip>:11601",
+    },
 }
 
 
@@ -82,6 +92,10 @@ def prune(objective: str, last_output: str = "", step: int = 0) -> List[dict]:
         selected.append("nuclei")
     if any(token in lowered_objective for token in ("ffuf", "fuzz", "directory brute")):
         selected.append("ffuf")
+    if any(token in lowered_objective for token in ("katana", "crawl", "crawler", "spider")):
+        selected.append("katana")
+    if any(token in lowered_objective for token in ("ligolo", "tunnel", "pivot")):
+        selected.append("ligolo-ng")
     if not selected:
         selected = ["nmap"]
     return [SCHEMAS[name] for name in dict.fromkeys(selected)]
